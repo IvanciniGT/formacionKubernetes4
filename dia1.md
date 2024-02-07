@@ -291,25 +291,25 @@ A Kubernetes le pasamos configuraciones mediante objetos (principalmente en docu
 Y por defecto en Kubernetes (especificación) se habla de un montón de objetos:
 
 - Node
-- Namespace
-- Pod
-- Deployment
+* Namespace
+* Pod
+* Deployment
   - Replicaset
-- Statefulset
-- DaemonSet
-- Secret
-- Configmapo
-- Service
+* Statefulset
+* DaemonSet
+* Secret            Para rellenar volumenes y variables de entorno
+* Configmap         Para rellenar volumenes y variables de entorno
+* Service
   - ClusterIP
   - NodePort
   - LoadBalancer
-- Ingress
-- PV
-- PVC
-- Network Policy
-- ResourceQuota
-- LimitRange
-- ServiceAccount
+* Ingress
+* PV
+* PVC
+* Network Policy
+* ResourceQuota
+* LimitRange
+* ServiceAccount
 
 ---
 # Pod
@@ -446,10 +446,129 @@ Queríamos 3 pod con MariaDB                 (PLANTILLA 2)
 
 Cómo sabe kubernetes que un contenedor de un pod está haciendo bien su trabajo? 
 - Si el proceso principal del contenedor está corriendo
+
+# QUE SON ESTAS?
+
 - StartupProbes
 - LivenessProbes
 - ReadinessProbes
 
+
+StartupProbes: Es una prueba que hacemos para ver si el contenedor ha terminado de arrancar o no
+               Si no acaba de arrancar... me lo crujo (KUBERNETES LO REINICIA)
+               Una vez superada la strartupProbe, se pasa a la livenessProbe:
+LivenessProbe: Es una prueba que hacemos para ver si el contenedor está en un estado SALUDABLE... aunque no listo para prestar servicio
+               Si no está saludable... me lo crujo (KUBERNETES LO REINICIA)
+               Una vez superada la livenessProbe, se pasa a la readinessProbe:
+ReadinessProbe: Es una prueba que hacemos para ver si el contenedor está en un estado SALUDABLE y listo para prestar servicio
+                Si no está listo... kubernetes lo saca del pool de balanceo
+                Si está listo: READY, el contenedor se pone en el pool de balanceo
+
+Imaginad una BBDD que tarda en arrancar.... Le doy tiempo.... miro a ver si el proceso está en marcha... y cuando me puedo conectar a ella...
+digo que está arrancada INITIALIZED
+
+A partir de ahí miro si puedo conectarme a ella con usuario administrador... si puedo es que está viva...
+Pero para estar ready, debo poder conectarme a ella con un usuario normal... y que me devuelva datos... entonces la meto en balanceo
+
+A lo mejor está READY... y se lanza un backup de la BBDD... y la pongo en modo mnto.
+De forma que los usuarios no se conecten a ella... pero si el admin... para hacer el backup.
+La saco de balanceo... y la dejo en modo mnto.
+PERO NI DE COÑA LA CRUJO... que estoy en medio de un backup... esta SALUDABLE, peo o lista para prestar servicio.
+
+WEB
+el startup probe es que conecte por http://localhost/status : 200
+    - Comienza a hacer la prueba a los 60 segundos
+    - Tienes un timeout de 5seg
+    - Repites la prueba cada 5 segundos
+    - Te doy 48  oportunidades para que conteste (48 x 5 = 240seg = 4minutos + 1minuto = 5minutos)
+
+Si en 10 segundo no contesta, reinicia el contenedor
+
+liveness probe es que conecte por http://localhost/status : 200... y en el json que devuelva que diga algo ( "maintenance", "ok")
+    - Ejecuta cada 5 segundos
+    - Y cuando 3 veces seguidas no contesta, reinicia el contenedor
+
+readiness probe es que conecte por http://localhost/ready : 200... y en el json que devuelva "ok"
+    - Ejecuta cada 5 segundos
+    - Y cuando 3 veces seguidas no contesta, lo saca del balanceo
+
+
+Tomcat / Weblogic (ThreadPool de ejecutores: 50 hilos) Y los hilos se han quedado atascaos... y no contestan... y el proceso principal está corriendo... pero no contesta
+Corriendo el proceso está... pero no contesta... A CRUJIR !!!!
+
+--- 
+
+# Afinidades y anti-afinidades
+
+Cuando tengo un cluster con varias máquinas... y tengo varios pods... a veces me interesa influir en el scheduler de kubernetes para que despliegue los pods en una máquina concreta (RARO) o con ciertas condiciones (MÁS HABITUAL)
+
+    NODO 1
+    NODO 2
+    NODO 50
+    NODO 51 <- GPU que te cagas (10k€)
+        label:
+            GPU: true
+    NODO 52 <- GPU que te cagas (10k€)
+        label:
+            GPU: true
+    NODO 53 <- GPU que te cagas (10k€) 
+        label:
+            GPU: true
+
+    Tengo un programa de reconocimiento de imágenes que quiero desplegar en el cluster... y quiero que se despliegue en un nodo con GPU
+        POD TEMPLATE (Deployment/StatefulSet)
+            1 replica del pod de reconocimiento de imágenes
+                Necesito una máquina con GPU
+
+            pod:
+                affinity:
+                    nodeAffinity:
+                        #preferedDuringSchedulingIgnoredDuringExecution:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                                - matchExpressions:
+                                    - key: GPU
+                                      operator: In # NotIn DoesNotExist Exists Gt Lt
+                                      values:
+                                        - true
+No las usamos tanto como parece. Hay una version simplificada de esta sintaxis... aunque menos potente:
+                nodeSelector:           # Required
+                    GPU: true
+                nodeName: nodo51 # La cago a la mínima... como se caiga la máquina... me quedo sin servicio... OYE
+                            Puede haber un caso que tengo 1 sola máquina con el megatarjeton GPU del siglo que ha costado 1000k€... y tengo que desplegar 1 pod... y no tengo más remedio que hacerlo en esa máquina... pero es raro
+
+Pero además de afinidades a nivel de nodo, en kubernetes podemos definir afinidades y antiafinidades a nivel de pod.
+
+AQUI ESTA LA QUE USAMOS SIEMPRE: ANTIAFINIDADES
+
+    Nodo 1  pod1 pod2 pod3                  Me interesa?
+    Nodo 2
+    Nodo 3
+
+Y quiero 3 replicas de mi pod de WP
+    pod1
+    pod2
+    pod3
+    pod4
+    GENERO ANTIAFINADAD PREFERIDA CON LOS PODS DEL MISMO TIPO
+
+    Nodo 1  pod1 pod4
+    Nodo 2  pod2
+    Nodo 3  pod3
+
+    De serie en todo Deployment o StatefulSet donde vaya potencialmente a tener más de 1 réplica de un pod... genero una antiafinidad preferida con los pods del mismo tipo
+
+        affinity:
+            podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 100
+                      labelSelector:
+                        matchExpressions:
+                            - key: app
+                              operator: In
+                              values:
+                                - mi-wp
+                    topologyKey: kubernetes.io/hostname ?????? MAÑANA OS EXPLICO ESTO
 ---
 
 ## Tipos de software 
@@ -527,19 +646,22 @@ Cluster de kubernetes
     ||                  | NETFILTER (Pregunta... sabeis quien da de alta esas reglas en cada host? KUBEPROXY)
     ||                  |     Si alguien pide ir a 10.0.1.101:3307 -> 10.0.0.103:3306
     ||                  |     Si alguien pide ir a 10.0.1.102:81   -> 10.0.0.101:80 | 10.0.0.104:80
-    ||                  |     Si alguien toca la puerta de 192.168.0.1:30080 -> mi-wp:81
+    ||                  |     Si alguien pide ir a 10.0.1.103:80   -> 10.0.0.106:80
+    ||                  |     Si alguien toca la puerta de 192.168.0.1:30080 -> mi-ingress:81
     ||                  |- Kubeproxy
     ||                  |- CoreDNS
     ||                          mi-bbdd-wp -> 10.0.1.101
     ||                          mi-wp      -> 10.0.1.102
+    ||                          mi-ingress -> 10.0.1.103
     ||= 192.168.0.2 -Nodo1
     ||                  | NETFILTER
     ||                  |     Si alguien pide ir a 10.0.1.101:3307 -> 10.0.0.103:3306
     ||                  |     Si alguien pide ir a 10.0.1.102:81   -> 10.0.0.101:80 | 10.0.0.104:80
-    ||                  |     Si alguien toca la puerta de 192.168.0.2:30080 -> mi-wp:81
+    ||                  |     Si alguien pide ir a 10.0.1.103:80   -> 10.0.0.106:80
+    ||                  |     Si alguien toca la puerta de 192.168.0.2:30080 -> mi-ingress:81
     ||                  |- Kubeproxy
     ||                  |- 10.0.0.101-Pod1- Apache
-    ||                                  |- contenedor apache+wp: 80
+    ||                                  |- contenedor apache+wp: 443 (https)
     ||                                          config.php: db_host: 10.0.0.102:3306 ??? FUNCIONARIA? SI
     ||                                           Pero sería una MIERDA GIGANTE !
     ||                                           Si el pod se cae o mueve de máquina pilla otra IP
@@ -549,17 +671,22 @@ Cluster de kubernetes
     ||                  | NETFILTER
     ||                  |     Si alguien pide ir a 10.0.1.101:3307 -> 10.0.0.103:3306
     ||                  |     Si alguien pide ir a 10.0.1.102:81   -> 10.0.0.101:80 | 10.0.0.104:80
-    ||                  |     Si alguien toca la puerta de 192.168.0.3:30080 -> mi-wp:81
+    ||                  |     Si alguien pide ir a 10.0.1.103:80   -> 10.0.0.106:80
+    ||                  |     Si alguien toca la puerta de 192.168.0.3:30080 -> mi-ingress:81
     ||                  |- Kubeproxy
     ||                  |- 10.0.0.103-Pod2- MariaDB
-    ||                                  |- contenedor mariadb: 3306
+    ||                  |               |- contenedor mariadb: 3306
+    ||                  |- 10.0.0.106-Pod6- IngressController: NGINX
+    ||                                  |- contenedor nginx: 80
+    ||                                      --- https://mi-web  -> mi-wp:80 <<<< ESTA REGLA DE CONFIGURACION PARA EL INGRESS CONTROLER = INGRESS
     ||= 192.168.0.4 -Nodo3
     ||                  | NETFILTER
     ||                  |     Si alguien pide ir a 10.0.1.101:3307 -> 10.0.0.103:3306
     ||                  |     Si alguien pide ir a 10.0.1.102:81   -> 10.0.0.101:80 | 10.0.0.104:80 (por defecto se hace round robin)... algo así
     ||                  |                                                                            eso es configurable... pero no en kubernetes
     ||                  |                                                                            a nivel del kernel de linux
-    ||                  |     Si alguien toca la puerta de 192.168.0.4:30080 -> mi-wp:81
+    ||                  |     Si alguien pide ir a 10.0.1.103:80   -> 10.0.0.106:80
+    ||                  |     Si alguien toca la puerta de 192.168.0.4:30080 -> mi-ingress:81
     ||                  |- Kubeproxy
     ||                  |- 10.0.0.104-Pod3- Apache
     ||                                  |- contenedor apache+wp: 80
@@ -571,8 +698,12 @@ Creo un servicio clusterIP para el pod de mariaDB: Una IP de balanceo + entrada 
                                                     10.0.1.101              mi-bbdd-wp
     Esa IP de balanceo me ofrece HA. Si el pod se mueve a otra máquina o recrea, su IP cambia... y kubernetes reasigna la entrada en NET FILTER
 
-Creo un servicio NodePort para el pod de wp: Una IP de balanceo + entrada de DNS en Kubernetes  + expon en el puerto 30080 de cada nodo
+Creo un servicio clusterIP para el pod de wp: Una IP de balanceo + entrada de DNS en Kubernetes  
                                                     10.0.1.102              mi-wp
+
+Creo un servicio LoadBalancer para el pod de nginx-ingressController: Una IP de balanceo + entrada de DNS en Kubernetes  + expon en el puerto 30080 de cada nodo
+                                                    10.0.1.103              mi-ingress
+    + Kubernetes configura el balanceador externo pata que balancee entre mis máquinas, al puerto NodePort que se haya abierto
 
 
 
@@ -596,8 +727,313 @@ spec:
         targetPort: 3306    # Puerto del pod
     type: ClusterIP
 ---
+No hay nada en Kubernetes (de forma estandar) que me permita configurar automáticamente un DNS externo a Kubernetes.
 
+Openshift (la distro de kubernetes de la gente de Redhat), si tiene un objeto para ello: ROUTE
 
+> En un cluster típico de kubernetes, que proporción o cantida de servicios creo de cada tipo:
 
+                        %       Absoluto
+    ClusterIP                   Resto               Comunicaciones internas
+    NodePort            0       0
+    LoadBalancer                1(2)                Exponer servicios al público
+
+    Y si tengo 2 o 2000 webs, app
+
+> Nos hace aquí un concepto típico de entornos de producción: PROXY REVERSO
+
+    Menchu ------------------>
+    Felipe ----> proxy   ---->   proxy reverso -->  Servidor web (app)
+                                    nginx
+                                    httpd
+                                    haproxy
+                                    envoy
+
+    El proxy se pone para proteger la identidad de Felipe... y para que el servidor web no sepa que Felipe existe.
+        De paso... en las empresas aprovechan y en el proxy capan el acceso a muchas web.
+
+    El proxy reverso protege a mi servidor web... de forma que los cliente no lleguen a él. No sepán ni quien es.
+
+    En Kubernetes al proxy reverso se le lama INGRESS CONTROLLER = PROXY REVERSO
 
 ## Ingress
+
+Regla de configuración de proxy reverso en kubernetes.
+Tengo un ficherito YAML, donde defino un INGRESS (REGLA DE PROXY REVERSO):
+    miapp.es ---> mi-wp:80
+El ingress controller se encarga de escribir esa regla en la sintaxis adecuada del proxy reverso concreto que se esté usando... sea nginx, httpd, traeffic, envoy
+
+---
+
+
+# Network Policy
+
+Reglas de firewall de red en kubernetes.
+Cuidado... depende del driver de red virtual que use para los pods, se soportan o no.
+
+Ejemplo: 
+    Al servicio bbdd:3306 del namespace miapp-prod solo pueden atacarlo desde el mismo namespace (determinados pods... IPs)
+
+Es una locura... Cuando acabo con un huevo de servicios, el mnto de esto se torna imposible.
+
+ISTIO
+
+# ResourceQuota -> Trabaja con datos acumulados a nivel de un ns
+    En tal ns no se pueden crear pods que en total requieran más de 4 cores
+    o de 32 Gbs de RAM
+    En tal ns no se pueden hacer más de 3 pvc.
+
+# LimitRange    -> Trabaja con datos a nivel de un pod de un ns
+    En tal ns cada pod no puede pedir más de 2 cores
+    o más de 10Gbs de RAM
+Permiten limitar el consumo de recursos de un determinado ns
+
+# Recursos asignados a los pods:
+ 
+Al definir un pod, detallamos los recursos:
+
+    resources:
+        requests:               # Lo que se solicita garantizado al cluster
+            cpu: 100m
+            memory: 256Mi
+        limits:                 # Hasta cuanto puedo usar si hay hueco
+            cpu: 8000m
+            memory: 256Mi       # Se configura IGUAL que la del request (LA LIO A LA MINIMA!)
+
+                                garantizado
+                                (request)
+                Capacidad       comprometido        USO
+                Cores   RAM     Cores     RAM       Cores   RAM
+    Nodo1        4      10                           0        0
+        Pod1                        3      6         3        6  El pod 1 pasa de 4 a 3 cores... va más lento
+        Pod3                        1      3         1        3
+    Nodo2        4      10
+        Pod2                        2      8         2        2
+
+                            REQUEST             LIMITS
+                            Cores  RAM      Cores  RAM
+    Pod1 - wp(apache)        3      6        6      10
+    Pod2 - mariadb           2      8
+    Pod3 - nginx             1      3
+    El kubernetes se carga el pod1 ... lo RENICIA POR EL ARTICULO 33
+    
+
+Quién decide en que máquina se despliega un pod? El scheduler de kubernetes SOLO MIRA EL GARANTIZADO/COMPROMETIDO DEL NODO
+
+En JAVA, cuando levanto la JVM le asigno también memoria RAM
+    -Xms512m
+    -Xmx512m La recomendación en JAVA que sean iguales.
+
+# ServiceAccount
+
+Es una cuenta de servicio. Me sirven para interactuar con el APISERVER de kubernetes
+
+Imaginad que quiero montar un programa que provea volumenes en automático cuando se hace una petión de volumen.
+Ese programa monitorizará WATCH de las pvc de TODOS los NAMESPACES del cluster...
+Eso se lo tiene que permitir Kubernetes.
+Para identificarme (como programa) ante kubernetes, cuando llame a su APISERVER, uso una cuenta de servicio (~USUARIO) = SERVICE ACCOUNT
+Los service accounts tiene asignados ROLES (permisos) en kubernetes.
+Esos permisos se configuran mediante combinaciones de: VERBOS + RECURSOS + NAMESPACE
+    ROLE: CREADOR DE VOLUMENES
+      -  VERBOS: WATCH, UPDATE, GET
+         RECURSOS: PVC
+         NAMESPACE: *
+      - VERBOS: CREATE, GET, DELETE
+         RECURSOS: PV
+A la cuenta de servicio le asigno roles: ROLE BINDING
+    El service Account: provisionador-de-volumenes <-> ROLE: CREADOR DE VOLUMENES
+
+Ese programa cuando interactue con el API SERVER de kubernetes, lo hará con la cuenta de servicio provisionador-de-volumenes
+Kubernetes le pedirá AUTENTICACIÓN... y el programa le pasará el TOKEN de seguridad asociado la cuenta de servicio provisionador-de-volumenes,
+que está guardado en un SECRET de kubernetes.
+
+---
+
+# Volumenes en kubernetes
+
+Los volumenes en el mundo de los contenedores los usamos para:
+- Hacer accesible a un contenedor de un pod ficheros del host (Monitorizar, acceder a servicios del host-socket, ...)
+        hostPath, doy una ruta del host que monto en el poc/contenedor
+- Compartir datos entre contenedores de un mismo pod
+        emptyDir ( hdd, memoria ram)
+- Inyectar archivos/configuraciones/Carpetas a un pod
+        configMap, secret, emptyDir
+        Imaginad que tengo u archivo de configuración de un programa X... en GIT... y lo quiero meter en mi contenedor.
+        Monto un initContainer que rellene un fichero/carpeta que comparte con un contenedor que arranca luego
+- Guardar datos de forma persistente accesibles tras la eliminación de un pod
+        persitentVolumeClaim
+        nfs
+        iscsi
+        fibre channel 
+        azure disk
+        aws ebs
+        gce pd
+
+# qué es un PV?
+
+Es una REFERENCIA a un volumen de almacenamiento que puedo usar dentro de un cluster de kubernetes para asignarlo a un pod, al que le pongo unos metadatos.
+
+Si defino un pv de tipo azure disk, el pv es una referencia a un volumen que he creado previamente en azure.
+
+    apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+        name: mivolumen1-amazon
+    spec:
+        # Metadatos:
+        capacity:
+            storage: 3Gi # Este es el tamaño real del volumen? NO... es lo que doy de alta en Kubernetes
+                                # Kubernetes no mira esto para nada... a la hora del espacio que hay en el volumen... ni lo comprueba... lo lo chequea... ni lo asegura..# 
+                                # He puesto yo a manita lo que me ha salido de las narices
+                                # Más me vale que ande con cuidado y ponga algo dsensato (lo mismo que en AWS,... lo disponible de verdad)
+        accessModes:
+            - ReadWriteOnce         Es un volumen de lectura y escritura que será usado como mucho en un NODO (estando en él accesible para todos los pods que quiera)
+            - ReadOnlyMany          Es un volumen de solo lectura que será usado por varios nodos (y por sus pods)
+            - ReadWriteMany         Es un volumen de lectura y escritura que será usado por varios nodos (y por sus pods)
+            - ReadWriteOncePod      Es un volumen de lectura y escritura que será usado por un solo pod
+        storageClassName: repidito-redundante
+        # Es una referencia al volumen REAL donde dios quiera que esté precreado
+        awsElasticBlockStore:
+            volumeID: "vol-0e3fbaeee540b4611"
+            fsType: ext4
+
+3Gi -> Gibibyte
+    1 gibibyte = 1024 mebibytes
+    1 Mibibyte = 1024 kibibytes
+    1 Kibibyte = 1024 bytes
+
+    1 Gb = 1000 Mb
+    1 Mb = 1000 Kb
+    1 Kb = 1000 bytes
+
+    Hace 25 años, 1 Gb eran 1024 Mb... pero se cambio HACE 25 años YA ... para seguir los prefijos del SI (Sistema Internacional de Unidades)
+
+A priori, NO NECESITO USAR PVS para nada en kubernetes y aún así tener persistencia en mis pods: VEASE : 
+
+    apiVersion: v1
+    kind: Pod
+    metadata:
+        name: test-ebs
+    spec:
+        containers:
+            -   image: registry.k8s.io/test-webserver
+                name: test-container
+                volumeMounts:
+                    - mountPath: /test-ebs
+                      name: test-volume
+        volumes:
+            - name: test-volume
+              awsElasticBlockStore:
+                volumeID: "vol-0e3fbaeee540b4611"
+                fsType: ext4
+              persitentVolumeClaim
+              nfs
+              iscsi
+              fibre channel 
+              azure disk
+              aws ebs
+              gce pd
+              emptyDir
+              configMap
+              secret
+              hostPath
+              AQUI NO EXISTE pv... ni persistentVolume
+
+PROBLEMA DE ESCRIBIR COSAS COMO ESTA:
+- Quién configura este archivo... quién lo escribe? DESARROLLO
+    Por qué? joder, porque es el que sabe como hay que desplegar su app... mis variables de entorno que necesito... mis puertos... los recursos que necesito, la imagen que uso 
+- Tengo yo npi de donde están creando en esta empresita los volumenes? en amazon, en azure, en fb? NPI... es más NO QUIERO SABERLO.
+- Como desarrollador yo, lo que sé es:
+  - Necesito 100Gbs de espacio en disco según se ha estimado en el proyecto 
+  - Y rapiditos
+  - Y redundantes
+  - Y pa mi solo... no se lo quiero compartir a nadie
+
+
+    Y para esto están los PVC... para hablar mi IDIOMA :
+
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+            name: mi-pvc
+        spec:   
+            accessModes:
+                - ReadWriteOnce
+            resources:
+                requests:
+                    storage: 50Gi
+            storageClassName: rapidito-redundante
+
+    El administrador del cluster configura un PV:
+
+            apiVersion: v1
+            kind: PersistentVolume
+            metadata:
+                name: mivolumen1-amazon
+            spec:
+                # Metadatos:
+                capacity:
+                    storage: 100Gi # Este es el tamaño real del volumen? NO... es lo que doy de alta en Kubernetes
+                                        # Kubernetes no mira esto para nada... a la hora del espacio que hay en el volumen... ni lo comprueba... lo lo chequea... ni lo asegura..# 
+                                        # He puesto yo a manita lo que me ha salido de las narices
+                                        # Más me vale que ande con cuidado y ponga algo dsensato (lo mismo que en AWS,... lo disponible de verdad)
+                accessModes:
+                    - ReadWriteOnce         Es un volumen de lectura y escritura que será usado como mucho en un NODO (estando en él accesible para todos los pods que quiera)
+                    - ReadOnlyMany          Es un volumen de solo lectura que será usado por varios nodos (y por sus pods)
+                    - ReadWriteMany         Es un volumen de lectura y escritura que será usado por varios nodos (y por sus pods)
+                    - ReadWriteOncePod      Es un volumen de lectura y escritura que será usado por un solo pod
+                storageClassName: rapidito-redundante
+                # Es una referencia al volumen REAL donde dios quiera que esté precreado
+                awsElasticBlockStore:
+                    volumeID: "vol-0e3fbaeee540b4611"
+                    fsType: ext4
+            Y entonces  Kubernetes hace magia: MATCH entre PVC y PV... comparando metadatos.
+
+                mi-pvc <-> mivolumen1-amazon SURGE EL AMOR !
+            El desarrollador, su volumen en su pod(configurao con una plantilla: Deployment/StatefulSet) pone de tipo persistentVolumeClaim:
+
+
+                    apiVersion: v1
+                    kind: Pod
+                    metadata:
+                        name: test-ebs
+                    spec:
+                        containers:
+                            -   image: registry.k8s.io/test-webserver
+                                name: test-container
+                                volumeMounts:
+                                    - mountPath: /test-ebs
+                                    name: test-volume
+                        volumes:
+                            - name: test-volume
+                              persistentVolumeClaim:
+                                    claimName: mi-pvc
+
+                                        KUBERNETES SUSTITUYE ESTO POR: (SACANDOLO DEL PV ASOCIADO AL PVC)
+                                        awsElasticBlockStore:
+                                            volumeID: "vol-0e3fbaeee540b4611"
+                                            fsType: ext4
+
+Antiguamente, hace 8-10 años, los administradores de sistemas del cluster de kubernetes, tenía precreados 100 volumenes
+Hoy en día, lo que hacemos es montar dentro del cluster PROVISIONADORES AUTOMATICOS DE VOLUMENES PERSISTENTES
+
+Cuando un desarrollador solicita (crea) un pvc, el provisionar (un programa que está corriendo por ahí) se da cuenta 
+(está todo el puñetero rqato preguntando al kubernetes si hay un pvc nuevo?) y bajo demanda, se conecta con el BACKEND REAL DE ALMACEMAMIENTO:
+- AWS
+- AZURE
+- CABINA DE DISCOS EMC2
+Crea allí un volumen REAL
+Y genera una PV en kubernetes (una referencia a ese volumen real) y la asocia al PVC que ha creado el desarrollador.
+
+Cuando trabajo con un cluster contratado a un cloud, el cloud ya me da preinstalado en el cluster un provisionador de volumenes que trabaja con SUS volumenes.
+Si me monto yo mi cluster on premise, tengo que montar mi propio provisionador de volumenes que trabaje con mis volumenes.
+
+Si se crea un PV ... queda como disponible hasta que es vinculado a una PVC
+Si se crea una PVC ... queda como desasignada hasta que es vinculada a un PV
+
+Hoy en día la tendencia es a crear primero los PVC ... y que los PV se generen en automático por un provisionador de volumenes bajo demanda.
+Antiguamente los admin creaban 50 pvs... y los dejaban ahí hasta que se consumían.
+
+----
+# PVC
+Una petición para que un pod solicite donde guardar sus datos.
