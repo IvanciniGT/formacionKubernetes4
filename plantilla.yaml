@@ -1,0 +1,141 @@
+# YAML es un lenguaje para estructurar/compartir información, similar a JSON o XML
+# YAML es más legible para los humanos
+# Nos permite poner comentarios.... no como JSON ALELUYA!!!
+# Otra gracia es que dentro de un fichero YAML puedo tener muchos documentos YAML... no como en JSON o XML
+# Cada documento debe ir precedido por 
+--- # Salvo el primero... para el que es opcional
+# Existe una marca, poco habitual en según que usos... que es la marca de fin de documento
+# Esa marca es opcional. Y en ficheros no tiene sentido ninguno.
+# Solo tiene sentido si estoy mandando documentos por red (streaming)
+...
+---
+# Un documento YAML es un NODO
+# En YAML hay 2 tipos de nodos: ESCALARES y de COLECCION
+...
+---
+# Nodos escalares: Contienen un único valor
+# Números
+3
+---
+3.14
+---
+-9
+---
+-.Inf # -.inf -.INF
+---
+.Nan # -.nan -.NAN
+---
+# Valores lógicos
+true # True TRUE
+---
+false # False FALSE
+---
+yes
+---
+# OJO... Hoy en día estamos en spec 1.2 
+# En 1.1 se admitían:
+# yes no on off YES y n OFF
+# YA NO... lo hicieron fatal ,... no lo deprecaron primero.... LO QUITARON DIRECTAMENTE
+# Para que la gente no se volviera loca, muchos parsers siguen aceptando esos valores
+# Hasta que dejen de aceptarlo... En cuantito veais un valor de este estilo: FUERA
+---
+# TEXTOS: LO MAS COMPLEJO DE YAML
+En yaml "puedo 'escribir es
+
+te #TEXTO
+---
+"En yaml \"puedo 'escribir\n es
+
+te #TEXTO"
+---
+'En yaml "puedo ''escribir\n es
+
+te #TEXTO'
+# La contrabarra solo sirve como caracter de escape entre comillas dobles
+# NO JODEMOS MUCHO CON ESTAS SINTAXIS: REGLA:
+# A priori sin comillas... Si tengo un texto un poco especial, las que me vengan bien... 
+# Pero siempre textos de 1 linea
+---
+# Para textos de varias lineas tengo otras 2 sintaxis en YAML:
+# LITERAL
+|4-
+     En yaml "puedo 'escribir
+      es
+    te #TEXTO" |\:
+---
+# FOLDED
+>4-
+     En yaml "puedo 'escribir
+      es
+    te #TEXTO" >\:
+---
+# Nulo
+~
+---
+# Colecciones: Listas ordenadas y diccionarios desordenados
+# Listas ordenadas
+- item1
+- 2
+- true
+- 
+        - subitem 1
+        - subitem 2
+- - subitem 1
+  - subitem 2
+---
+- item1
+- 2
+- true
+---
+[item1, 2, true] # Para compatibilidad con JSON
+# Es más compleja de leer. No es humanamente legible
+# Cuando mi archivo suba a GIT, que subirá,
+# GIT Identifica cambios a nivel de línea de texto.
+---
+[]
+---
+# Mapas desordenados
+clave: valor
+clave2: valor2
+clave3:
+    subclave: valor
+    subclave2: valor2
+---
+{clave: valor,  clave2: valor2}
+---
+{}
+---
+?clave1: valor1
+?clave2: valor2
+?
+  - item1
+  - item2
+: valor3
+---
+!!str 33
+---
+clave2: valor2
+clave1: valor1
+# Son el mismo documento... son mapas desordenados
+---
+# Anchors y aliases
+# En YAML puedo definir un nodo y referenciarlo en otro lugar
+# Esto es útil para no repetir información
+clave1: &ref 
+             sublista1:
+              - item1
+              - item2
+             otracosa: 3
+clave2: *ref
+
+# Además, en el caso de Mapas... Puedo hacer inclusión de valores de un mapa en otro, con <<
+
+clave3:
+    <<: *ref
+    sublista2:
+        - item3
+        - item4
+
+# Cada programa que usa YAML define luego un ESQUEMA,
+# Igual que existen en XML Schema o JSON Schema
+# Los esquemas definen la estructura que tiene que tener un documento para que sea válido para ese programa: QUE CLAVES, QUE TIPOS DE DATOS, ETC

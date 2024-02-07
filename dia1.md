@@ -559,7 +559,7 @@ Y quiero 3 replicas de mi pod de WP
     De serie en todo Deployment o StatefulSet donde vaya potencialmente a tener más de 1 réplica de un pod... genero una antiafinidad preferida con los pods del mismo tipo
 
         affinity:
-            podAntiAffinity:
+            podAntiAffinity:                                                # REGLA 1
                 preferredDuringSchedulingIgnoredDuringExecution:
                     - weight: 100
                       labelSelector:
@@ -568,7 +568,88 @@ Y quiero 3 replicas de mi pod de WP
                               operator: In
                               values:
                                 - mi-wp
-                    topologyKey: kubernetes.io/hostname ?????? MAÑANA OS EXPLICO ESTO
+                    topologyKey: kubernetes.io/hostname # A que nivel genero la afinidad o antiafinidad  # esto es una etiqueta a nivel del nodo
+            podAffinity:                                                    # REGLA 2
+                preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 100
+                      labelSelector:
+                        matchExpressions:
+                            - key: app
+                              operator: NotIn
+                              values:
+                                - mi-wp
+                    topologyKey: kubernetes.io/hostname 
+
+                                            REGLA 1         REGLA 2
+    nodo1   pod(mariadb)+pod(mi-wp)            x               √
+    nodo2   pod(mariadb)                       √               √
+    nodo3   pod(mi-wp)                         x               x
+    nodo4                                      √               x
+        +pod(mi-wp)
+
+        Realmente genero afinidad o antiafinidad con todos los nodos que compartan topologyKey
+
+            podAffinity:                                                    # REGLA 2
+                preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 100
+                      labelSelector:
+                        matchExpressions:
+                            - key: app
+                              operator: NotIn
+                              values:
+                                - mi-wp
+                    topologyKey: zona 
+
+            ZONA                                                    ?
+    nodo1   europa              pod(mariadb*)+pod(mi-wp)            √
+    nodo2   europa              pod(mariadb*)                       √
+    nodo3   europa              pod(mi-wp)                          √
+    nodo4   europa                                                  √
+
+    nodo5   asia                pod(mariadb*)                       √
+    nodo6   asia                                                    √
+
+    nodo7   oceania                                                 x
+    nodo8   oceania             pod(mi-wp)                          x
+
+        +pod(mi-wp)
+
+    Como veis, con las afinidades y antiafinidades puedo montar un carajal de narices! MUCHO CUIDADO . NO VE VUELVO LOCO
+
+Por lo tanto... qué conclusion sacamos de las afinidades / antiafinidades? PARA QUE SIRVEN?
+    Para que el desarrollador pueda influir en el scheduler de kubernetes... y que despliegue los pods en una máquina con ciertas condiciones/características
+    EJEMPLO: Quiero generar afinidad con máquinas que tengan GPU, ya que soy un programa que necesita GPU
+
+Ahora bien... evitaría esto que un pod que no requiera GPU se instale en una máquina con GPU?
+    Podría un desarrollador generar una antiafinidad con máquinas que tengan GPU, para que su pod no se instale en una máquina con GPU? NO
+    Pero... es maás.. aunque lo pudiera hacer.. voy a tener a 500 desarrolladores que no necesitan GPU poniendo en sus ficheros, quiero generar antifinidad con máquinas que tengan GPU? Lo van a hacer? se van a acordad? NO
+    Quien dice GPUs... dice: Máquinas que tengas un tipo de procesador más rápido... un tipo de almacenamiento más rápido.
+
+    En un cluster es habitual tener máquinas especiales... que las quiero reservar para ciertos usos.
+    Y en esas máquinas no quiero que se instale cualquier cosa... y para eso tengo las TOLERANCIAS y LOS TINTES
+
+# Tolerations y los taints
+
+Son un concepto complementario al de las afinidades...pensado para ADMINISTRADORES DE CLUSTERS, no para desarrolladores, al contrario que las afinidades.
+$   kubectl taint node nodo1 gpu=true:NoSchedule
+Si un administrador hace esto, ese nodo rechazará todo por que no tenga una torerancia a ese tinte: gpu=true:NoSchedule
+
+Para lo cual el desarrollador explicitamente debe decir que su pod tiene una tolerancia a ese tinte:
+
+    tolerations:
+        - key: gpu
+          operator: In
+          values: 
+            - true
+          effect: NoSchedule
+
+## RESUMEN:
+
+Afinidades y antiafinidades permiten a los DESARROLLADORES generar cierta preferencia por ciertas máquinas
+Tintes y toleraciones permiten a los ADMINISTRADORES que las máquinas rechacen o admitan pods
+
+Ambos trabajan en conjunto.
+
 ---
 
 ## Tipos de software 
