@@ -1,27 +1,66 @@
-# Si no me ponen nombre-del-secret, uso: RELEASE_NAME_datos-sensibles-wp
-nombre-del-secret
-usuario
-# Si no me ponen password, genero uno aleatorio
-password
-# Si no me ponen root-password, genero uno aleatorio
-password-root
-
-Si quiero un secret existente
-    nombre
-    que nombre se le ha puesto al dato del password
-    que nombre se le ha puesto al dato del root password
-    que nombre se le ha puesto al dato del usuario password
-nombre-del-configMap
-nombre-bbdd
-
-# PVC WP
-name
-storage
-storageClass
-accessModes
-Si a lo mejor ya existe un pvc que quieren usar.
-    # Vengo de una instalación sin HELM y la quiero HELMERIZAR
-    # 2. QUE HELM CREE LOS PVC ES HIPERPELIGROSO. NO NOS GUSTA NADA!
-        # Si hago el día de mañana un HELM UNINSTALL los PVC se borrar
-            # ADIOS DATOS
-    # Mientras que si yo he creado el pvc a manita antes... y se lo enchufo, NO CORRO RIESGOS
+# Un objetivo es que alguien pueda desplegar el chart sin tocar 1 coma... y que funcione.
+wordpress:
+    replicas:
+        min:                1
+        scaling:
+            enabled:        false
+            max:            ~
+            metrics:        []
+    ingress:
+        enabled:            false
+        host:               ~
+        ingressClassName:   ~
+        extra-annotations:  {}
+    service:
+        type:               NodePort
+        nodePort:           ~ # Se obtenga en automático
+    image:
+        registry:           ~
+        repo:               wordpress
+        tag:                6.4
+        pullPolicy:         IfNotPresent
+    extra-labels:           {}
+    #extra-annotations:     {}
+    extra-env:              []
+    #extra-initContainers:  []
+    #extra-containers:      []
+    #affinities:            {}
+    #nodeSelector:          {}
+    resources:              {}
+        #requests:
+        #    cpu:    
+        #    memory: 
+        #limits:
+        #    cpu:    
+        #    memory: 
+    persistence:
+        enabled:            false
+        existingClaimName:  ~ # Si este se pone, te ignoro los de abajo
+        capacity:           ~    
+        storageClassName:   ~
+        
+database:
+    config:
+        name:               wordpress
+        existingSecretName: ~ # Si pones aquí algo, se ignoran los de abajo: user, password, root-password
+                              # En ese caso se buscará en ese secreto las claves: user, password, root-password
+        user:               wordpress
+        password:           ~ # Si no me ponen password, genero uno aleatorio
+        root-password:      ~ # Si no me ponen root-password, genero uno aleatorio
+    image:
+        registry:           ~
+        repo:               mariadb
+        tag:                11.2
+        pullPolicy:         IfNotPresent
+    resources:              {}
+        #requests:
+        #    cpu:    
+        #    memory: 
+        #limits:
+        #    cpu:    
+        #    memory: 
+    persistence:
+        enabled:            false
+        existingClaimName:  ~ # Si este se pone, te ignoro los de abajo
+        capacity:           ~    
+        storageClassName:   ~
