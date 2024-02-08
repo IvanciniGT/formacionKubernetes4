@@ -3,7 +3,8 @@
 apiVersion:             v1
 kind:                   Service
 metadata:
-    name:               mariadb-service # Este nombre... es el fqdn que se mete en el DNS
+    name:               {{ include "nombre-servicio-bbdd" . }}
+    namespace:          {{ $.Release.Namespace }}
 
 spec:
     type:               ClusterIP

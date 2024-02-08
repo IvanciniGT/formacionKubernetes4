@@ -4,14 +4,15 @@ apiVersion:             apps/v1
 kind:                   StatefulSet
 
 metadata:
-    name:               mariadb
+    name:               {{ $.Release.Name }}-mariadb
+    namespace:          {{ $.Release.Namespace }}
 
 spec:
     replicas:           1
     selector:           
         matchLabels:
             app:        mariadb
-    serviceName:        mariadb-service # PA QUE! Es obligatorio
+    serviceName:        {{ include "nombre-servicio-bbdd" . }} # PA QUE! Es obligatorio
                         # Para cada pod una entrada en DNS llamada: nombre_pod.mariadb-service que apuntará a la ip de ese pod
                                     # mariadb-0.mariadb-service
                                     # mariadb-1.mariadb-service
