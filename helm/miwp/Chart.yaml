@@ -1,0 +1,17 @@
+type:           application
+
+name:           miwp
+description:    Para desplegar los mejores Wordpresses
+
+apiVersion:     v2          # Del esquema YAML de helm. No se toca
+version:        0.1.0       # VERSIÓN DEL CHART... Mi plantilla de despliegue
+appVersion:     "6.4.X"     # VERSION DE LA APP que despliego: WP
+
+# dependencies:
+#home: http://somos.los.mejores.com
+#icon: URL
+#maintainers:
+#     - name: 
+#      url:
+#sources:
+#    - http://github....

@@ -1,0 +1,11 @@
+---
+apiVersion:     v1
+kind:           ConfigMap
+
+metadata:
+    name:       {{ .Release.Name }}-datos-wp
+    namespace:  {{ .Release.Namespace }}
+
+data:
+    nombre-bbdd:   {{ $.Values.database.config.name }}
+    #nombre-bbdd2:  {{ .Values.database.config.name }}

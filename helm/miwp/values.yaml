@@ -46,7 +46,7 @@ database:
                               # En ese caso se buscará en ese secreto las claves: user, password, root-password
         user:               wordpress
         password:           ~ # Si no me ponen password, genero uno aleatorio
-        root-password:      ~ # Si no me ponen root-password, genero uno aleatorio
+        rootPassword:       ~ # Si no me ponen root-password, genero uno aleatorio
     image:
         registry:           ~
         repo:               mariadb
