@@ -1,0 +1,13 @@
+---
+# PVC WP
+apiVersion: v1
+kind:       PersistentVolumeClaim
+metadata:
+    name:   pvc-wp
+spec:
+    resources:
+        requests: 
+            storage: 5Gi
+    storageClassName: rapidito
+    accessModes:
+        - ReadWriteOnce

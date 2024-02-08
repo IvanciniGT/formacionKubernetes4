@@ -1,0 +1,67 @@
+---
+# StatefulSet: MariaDB - Standalone
+apiVersion:             apps/v1
+kind:                   StatefulSet
+
+metadata:
+    name:               mariadb
+
+spec:
+    replicas:           1
+    selector:           
+        matchLabels:
+            app:        mariadb
+    serviceName:        mariadb-service # PA QUE! Es obligatorio
+                        # Para cada pod una entrada en DNS llamada: nombre_pod.mariadb-service que apuntará a la ip de ese pod
+                                    # mariadb-0.mariadb-service
+                                    # mariadb-1.mariadb-service
+                                    # mariadb-2.mariadb-service
+                        # El nombre del servicio apunta a una IP de balanceo.. pero puedo apuntar a cada pod mediante un nombre fqdn 
+                        # en automático Kubernetes crea sub-servicios
+    template:
+        metadata:
+            labels:
+               app:     mariadb
+        spec:
+            containers:
+                -   name:                   mariadb
+                    image:                  mariadb:11.2
+                    imagePullPolicy:        IfNotPresent
+                    env:
+                        -   name:           MARIADB_ROOT_PASSWORD
+                            value:          mariadb-service
+                        -   name:           MARIADB_USER
+                            valueFrom:
+                                secretKeyRef:
+                                    name:   datos-sensibles-mariadb
+                                    key:    usuario-bbdd
+                        -   name:           MARIADB_PASSWORD
+                            valueFrom:
+                                secretKeyRef:
+                                    name:   datos-sensibles-mariadb
+                                    key:    password-bbdd
+                        -   name:           MARIADB_DATABASE
+                            valueFrom:
+                                configMapKeyRef:
+                                    name:   datos-mariadb
+                                    key:    nombre-bbdd
+                    volumeMounts:
+                        -   name:           datos-persistentes-mariadb
+                            mountPath:      /var/www/html
+                    resources:
+                        requests:
+                            cpu:            500m
+                            memory:         1Gi
+                        limits:
+                            cpu:            2
+                            memory:         1Gi
+    volumeClaimTemplates:
+        -   metadata:
+                name:   datos-persistentes-mariadb
+            spec:
+                resources:
+                    requests: 
+                        storage: 5Gi
+                storageClassName: rapidito
+                accessModes:
+                    - ReadWriteOnce

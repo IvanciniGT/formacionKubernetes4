@@ -1,0 +1,54 @@
+---
+# Deployment: WP (apache+php), pero este no... quiero entre 2 y 5 en base al uso de CPU
+apiVersion:             apps/v1
+kind:                   Deployment
+
+metadata:
+    name:               wp
+
+spec:
+    replicas:           1
+    selector:           
+        matchLabels:
+            app:        wp
+    template:
+        metadata:
+            labels:
+               app:     wp
+        spec:
+            containers:
+                -   name:                   wp
+                    image:                  wordpress:6.4 # con apache incorporado
+                    imagePullPolicy:        IfNotPresent
+                    env:
+                        -   name:           WORDPRESS_DB_HOST
+                            value:          mariadb-service
+                        -   name:           WORDPRESS_DB_USER
+                            valueFrom:
+                                secretKeyRef:
+                                    name:   datos-sensibles-wp
+                                    key:    usuario-bbdd
+                        -   name:           WORDPRESS_DB_PASSWORD
+                            valueFrom:
+                                secretKeyRef:
+                                    name:   datos-sensibles-wp
+                                    key:    password-bbdd
+                        -   name:           WORDPRESS_DB_NAME
+                            valueFrom:
+                                configMapKeyRef:
+                                    name:   datos-wp
+                                    key:    nombre-bbdd
+                    volumeMounts:
+                        -   name:           datos-persistentes
+                            mountPath:      /var/www/html
+                    resources:
+                        requests:
+                            cpu:            500m
+                            memory:         1Gi
+                        limits:
+                            cpu:            4
+                            memory:         1Gi
+            volumes:
+                -   name:                   datos-persistentes
+                    persistentVolumeClaim:
+                        claimName:          pvc-wp

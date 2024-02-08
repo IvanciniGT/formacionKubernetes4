@@ -1,0 +1,22 @@
+---
+# HorizontalPodAutoescaler
+apiVersion:             autoscaling/v1
+kind:                   HorizontalPodAutoscaler # hpa
+metadata:
+    name:               wp-hpa
+spec:
+    minReplicas:        2
+    maxReplicas:        5
+    
+    scaleTargetRef:
+        apiVersion:     apps/v1
+        kind:           Deployment
+        name:           wp
+        
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
