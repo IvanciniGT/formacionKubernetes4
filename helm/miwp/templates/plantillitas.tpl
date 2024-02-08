@@ -17,3 +17,16 @@
 {{- define "release-prefijo" -}}
 {{ $.Release.Name }}-
 {{- end -}}
+
+{{- define "db-password" -}}
+{{ include "encriptarConValorPorDefecto" (dict "defecto" (randAscii 15) "valor" .) }}
+{{- end }}
+
+{{- define "db-user" -}}
+{{ include "encriptarConValorPorDefecto" (dict "defecto" "wordpress" "valor" .) }}
+{{- end }}
+
+{{- define "encriptarConValorPorDefecto" -}}
+{{- default (.defecto) .valor | b64enc | quote }}
+{{- end }}
+
