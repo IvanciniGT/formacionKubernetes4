@@ -4,7 +4,7 @@ apiVersion:             apps/v1
 kind:                   StatefulSet
 
 metadata:
-    name:               {{ $.Release.Name }}-mariadb
+    name:               {{ include "nombre-statefulset-bbdd" . }}
     namespace:          {{ $.Release.Namespace }}
 
 spec:

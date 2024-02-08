@@ -92,3 +92,22 @@ El .Values contiene:
 + Los datos que se hayan pasado en el fichero values.yaml del chart
 
 Los de arriba machacan a los de abajo
+
+
+
+
+public static String nombreServicio(Object release){
+    Map<String,String> mapa = new HashMap<>();
+    mapa.put("release",release);
+    mapa.put("nombre","mariadb");
+    return prefijo(mapa);
+}
+public static String nombreStatefulset(Object release){
+    Map<String,String> mapa = new HashMap<>();
+    mapa.put("release",release);
+    mapa.put("nombre","mariadb");
+    return prefijo(mapa);
+}
+public static String prefijo(Object release){
+    return ((Map<String,String>) release).get("release") + "-" + ((Map<String,String>) release).get("nombre");
+}

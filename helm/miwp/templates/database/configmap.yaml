@@ -3,7 +3,7 @@ apiVersion:     v1
 kind:           ConfigMap
 
 metadata:
-    name:       {{ .Release.Name }}-datos-wp
+    name:       {{ include "nombre-configmap-bbdd" . }}
     namespace:  {{ .Release.Namespace }}
 
 data:
