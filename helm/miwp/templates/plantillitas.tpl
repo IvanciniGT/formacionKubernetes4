@@ -11,7 +11,7 @@
 {{- end -}}
 
 {{- define "nombre-statefulset-bbdd" -}}
-{{ include "release-prefijo" . }}mariadb-statefulset
+{{ include "release-prefijo" $ }}mariadb-statefulset
 {{- end -}}
 
 {{- define "release-prefijo" -}}
@@ -27,6 +27,6 @@
 {{- end }}
 
 {{- define "encriptarConValorPorDefecto" -}}
-{{- default (.defecto) .valor | b64enc | quote }}
+{{- default (.defecto) $.valor | b64enc | quote }}
 {{- end }}
 

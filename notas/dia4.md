@@ -8,7 +8,7 @@ Cuando un chart de helm se procesa, tenemos que tener en cuenta varias cosas:
 
 # Qué es un Contexto, dentro de una ejecución de HELM?
 
-Un MAPA clave/valor, del que puedo sacar datos.
+Un MAPA clave/valor, del que puedo sacar datos... Realmente a última hora descubrimos que un contexto es simplemente un objeto que tengo en memoria: MAPA, Lista, número.
 Con qué sintaxis?
 - Sintaxis absoluta
 - Sintaxis relativa
