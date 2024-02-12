@@ -54,7 +54,8 @@ database:
         registry:           ~
         repo:               mariadb
         tag:                11.2
-        pullPolicy:         IfNotPresent
+        pullPolicy:         IfNotPresent # Always Never IfNotPresent
+
     resources:              {}
         #requests:
         #    cpu:    
