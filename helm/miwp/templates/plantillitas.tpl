@@ -30,3 +30,17 @@
 {{- default (.defecto) $.valor | b64enc | quote }}
 {{- end }}
 
+{{- define "database-labels" -}}
+app:     mariadb
+{{ include "extra-labels" $.Values.database }}
+{{- end -}}
+
+{{- define "wp-labels" }}
+app:     wp
+{{- include "extra-labels" $.Values.wordpress }}
+{{- end -}}
+
+{{- define "extra-labels" }}
+{{- $.extraLabels | toYaml }}
+{{- end -}}
+

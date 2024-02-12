@@ -11,7 +11,8 @@ spec:
     replicas:           1
     selector:           
         matchLabels:
-            app:        mariadb
+            {{- include "database-labels" . | nindent 12 }}
+
     serviceName:        {{ include "nombre-servicio-bbdd" . }} # PA QUE! Es obligatorio
                         # Para cada pod una entrada en DNS llamada: nombre_pod.mariadb-service que apuntará a la ip de ese pod
                                     # mariadb-0.mariadb-service
@@ -22,7 +23,7 @@ spec:
     template:
         metadata:
             labels:
-               app:     mariadb
+               {{- include "database-labels" $ | nindent 15 }}
         spec:
             containers:
                 -   name:                   mariadb

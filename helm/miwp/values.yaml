@@ -19,7 +19,7 @@ wordpress:
         repo:               wordpress
         tag:                6.4
         pullPolicy:         IfNotPresent
-    extra-labels:           {}
+    extraLabels:           {}
     #extra-annotations:     {}
     extra-env:              []
     #extra-initContainers:  []
@@ -47,6 +47,9 @@ database:
         user:               wordpress
         password:           ~ # Si no me ponen password, genero uno aleatorio
         rootPassword:       ~ # Si no me ponen root-password, genero uno aleatorio
+    extraLabels:           # {}
+        label1:             valor1
+        label2:             valor2
     image:
         registry:           ~
         repo:               mariadb
