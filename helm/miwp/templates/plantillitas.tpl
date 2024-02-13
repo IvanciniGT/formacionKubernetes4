@@ -64,38 +64,39 @@ imagePullPolicy:        {{ .pullPolicy }}
 
 
 {{- define "extra-env-vars-database" -}}
-{{- $prohibidas := dict "MARIADB_ROOT_PASSWORD" "database.config.rootPassword" }}
-{{- $_ := set $prohibidas "MARIADB_PASSWORD" "database.config.password" }}
-{{- $_ := set $prohibidas "MARIADB_USER" "database.config.user" }}
-{{- $_ := set $prohibidas "MARIADB_DATABASE" "database.config.name" }}
+{{- $prohibidas := dict "MARIADB_ROOT_PASSWORD" (dict "equivalentField" "database.config.rootPassword") )}}
+{{- $_ := set $prohibidas "MARIADB_PASSWORD" (dict "equivalentField" "database.config.password") }}
+{{- $_ := set $prohibidas "MARIADB_USER" (dict "equivalentField" "database.config.user") }}
+{{- $_ := set $prohibidas "MARIADB_DATABASE" (dict "equivalentField" "database.config.name") }}
 {{- /* include "extra-env-vars" (merge . (dict  "prohibidas" $prohibidas) ) */ -}}
 {{- include "extra-env-vars" (dict "extraEnv" .extraEnv "prohibidas" $prohibidas) -}}
 {{- end -}}
+
+
+
+{{- define "extra-env-vars-wordpress" -}}
+{{- $prohibidas := dict "WORDPRESS_DB_HOST" (dict "customErrorMessage" "La variable de entorno 'WORDPRESS_DB_HOST' no puede establecerse." )}}
+{{- $_ := set $prohibidas "WORDPRESS_DB_USER" (dict "equivalentField" "database.config.user") }}
+{{- $_ := set $prohibidas "WORDPRESS_DB_PASSWORD" (dict "equivalentField" "database.config.password") }}
+{{- $_ := set $prohibidas "WORDPRESS_DB_NAME" (dict "equivalentField" "database.config.name") }}
+{{- /* include "extra-env-vars" (merge . (dict  "prohibidas" $prohibidas) ) */ -}}
+{{- include "extra-env-vars" (dict "extraEnv" .extraEnv "prohibidas" $prohibidas) -}}
+{{- end -}}
+
+
 
 {{- define "extra-env-vars" -}}
 {{- $prohibidas := .prohibidas -}}
 {{- range $clave, $valor := .extraEnv -}}
 {{- if hasKey $prohibidas $clave -}}
+{{- if hasKey $prohibidas $clave -}}
 {{ fail (printf "No puede usar la variable de entorno '%s' en el extraEnv. Utilice la propiedad '%s' del fichero Values.yaml en su lugar." $clave (get $prohibidas $clave) ) }}
+{{- else -}}
+{{ fail () }}
+{{- end -}}
 {{- else -}}
 - name: {{ $clave }}
   value: {{ $valor }}
 {{ end -}}
 {{- end -}}
-{{- end -}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-{{- define "extra-env-vars-wordpress" -}}
-{{ include "extra-env-vars" . }}
 {{- end -}}

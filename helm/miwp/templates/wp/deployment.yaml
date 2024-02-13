@@ -22,7 +22,7 @@ spec:
                     imagePullPolicy:        IfNotPresent
                     env:
                         -   name:           WORDPRESS_DB_HOST
-                            value:          mariadb-service
+                            value:          {{ include "nombre-servicio-bbdd" . }}
                         -   name:           WORDPRESS_DB_USER
                             valueFrom:
                                 secretKeyRef:
