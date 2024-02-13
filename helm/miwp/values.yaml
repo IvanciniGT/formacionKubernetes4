@@ -63,8 +63,8 @@ database:
         estoSI:               valor
     resources:              {}
         #requests:
-        #    cpu:    
-        #    memory: 
+        #    cpu:    3       300m
+        #    memory: 23   Mi Gi Ki
         #limits:
         #    cpu:    
         #    memory: 

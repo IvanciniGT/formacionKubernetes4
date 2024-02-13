@@ -100,3 +100,45 @@ imagePullPolicy:        {{ .pullPolicy }}
 {{ end -}}
 {{- end -}}
 {{- end -}}
+
+
+{{- define "validate-resources" -}}
+
+{{- end -}}
+
+
+
+{{- define "validate-cpu-memory" -}}
+
+    {{- $invalidCPUValue := printf "El valor suministrado para CPU no es válido: '%s'. Debe ser un número entero opcionalmente seguido de la letra 'm'" .cpu -}}
+    {{- $invalidMemoryValue := printf "El valor suministrado para memory no es válido: '%s'. Debe ser un número entero seguido de la unidad 'Mi', 'Gi' o 'Ki'" .memory -}}
+    {{- $invalidResource := "Solo se permiten los recursos 'cpu' y 'memory'" -}}
+
+    {{- range $clave, $valor := . -}}
+        {{- if eq $clave "cpu" -}}
+            {{- if not (regexMatch "^[1-9][0-9]*m?$" $valor ) }}
+                {{ fail $invalidCPUValue }}
+            {{ end -}}
+        {{- else if eq $clave "memory" -}}
+            {{- if not (regexMatch "^[1-9][0-9]*[KMG]i$" $valor ) }}
+                {{ fail $invalidMemoryValue }}
+            {{ end -}}
+        {{- else -}}
+            {{- fail $invalidResource -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+
+
+            {{- /*
+                not condicion1
+                and condicion1 condicion2
+                or condicion1 condicion2
+                eq Igual
+                ne Distinto
+                lt Menor
+                gt Mayor
+                le Menor o igual
+                ge Mayor o igual
+            */ -}}
+
