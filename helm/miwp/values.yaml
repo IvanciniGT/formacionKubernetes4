@@ -21,7 +21,10 @@ wordpress:
         pullPolicy:         IfNotPresent
     extraLabels:           {}
     #extra-annotations:     {}
-    extraEnv:              []
+    extraEnv:              
+        #WORDPRESS_DB_USER: RUINA
+        WORDPRESS_DB_HOST: miServicio
+        vaBien:            valor
     #extra-initContainers:  []
     #extra-containers:      []
     #affinities:            {}

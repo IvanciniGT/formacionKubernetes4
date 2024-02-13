@@ -38,6 +38,7 @@ spec:
                                 configMapKeyRef:
                                     name:   datos-wp
                                     key:    nombre-bbdd
+                        {{- include "extra-env-vars-wordpress" $.Values.wordpress | nindent 24 }}
                     volumeMounts:
                         -   name:           datos-persistentes
                             mountPath:      /var/www/html

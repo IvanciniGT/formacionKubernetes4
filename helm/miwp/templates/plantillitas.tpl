@@ -64,7 +64,7 @@ imagePullPolicy:        {{ .pullPolicy }}
 
 
 {{- define "extra-env-vars-database" -}}
-{{- $prohibidas := dict "MARIADB_ROOT_PASSWORD" (dict "equivalentField" "database.config.rootPassword") )}}
+{{- $prohibidas := dict "MARIADB_ROOT_PASSWORD" (dict "equivalentField" "database.config.rootPassword") }}
 {{- $_ := set $prohibidas "MARIADB_PASSWORD" (dict "equivalentField" "database.config.password") }}
 {{- $_ := set $prohibidas "MARIADB_USER" (dict "equivalentField" "database.config.user") }}
 {{- $_ := set $prohibidas "MARIADB_DATABASE" (dict "equivalentField" "database.config.name") }}
@@ -89,10 +89,10 @@ imagePullPolicy:        {{ .pullPolicy }}
 {{- $prohibidas := .prohibidas -}}
 {{- range $clave, $valor := .extraEnv -}}
 {{- if hasKey $prohibidas $clave -}}
-{{- if hasKey $prohibidas $clave -}}
-{{ fail (printf "No puede usar la variable de entorno '%s' en el extraEnv. Utilice la propiedad '%s' del fichero Values.yaml en su lugar." $clave (get $prohibidas $clave) ) }}
+{{- if hasKey (get $prohibidas $clave) "equivalentField" -}}
+{{ fail (printf "No puede usar la variable de entorno '%s' en el extraEnv. Utilice la propiedad '%s' del fichero Values.yaml en su lugar." $clave (get (get $prohibidas $clave) "equivalentField") ) }}
 {{- else -}}
-{{ fail () }}
+{{ fail ( get (get $prohibidas $clave) "customErrorMessage") }}
 {{- end -}}
 {{- else -}}
 - name: {{ $clave }}
