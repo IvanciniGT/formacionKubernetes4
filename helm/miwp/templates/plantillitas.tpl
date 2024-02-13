@@ -58,3 +58,44 @@ image:                  {{ required $requiredRepo .repo }}:{{ required $required
 imagePullPolicy:        {{ .pullPolicy }}
 {{- end -}}
 {{- end -}}
+
+
+
+
+
+{{- define "extra-env-vars-database" -}}
+{{- $prohibidas := dict "MARIADB_ROOT_PASSWORD" "database.config.rootPassword" }}
+{{- $_ := set $prohibidas "MARIADB_PASSWORD" "database.config.password" }}
+{{- $_ := set $prohibidas "MARIADB_USER" "database.config.user" }}
+{{- $_ := set $prohibidas "MARIADB_DATABASE" "database.config.name" }}
+{{- /* include "extra-env-vars" (merge . (dict  "prohibidas" $prohibidas) ) */ -}}
+{{- include "extra-env-vars" (dict "extraEnv" .extraEnv "prohibidas" $prohibidas) -}}
+{{- end -}}
+
+{{- define "extra-env-vars" -}}
+{{- $prohibidas := .prohibidas -}}
+{{- range $clave, $valor := .extraEnv -}}
+{{- if hasKey $prohibidas $clave -}}
+{{ fail (printf "No puede usar la variable de entorno '%s' en el extraEnv. Utilice la propiedad '%s' del fichero Values.yaml en su lugar." $clave (get $prohibidas $clave) ) }}
+{{- else -}}
+- name: {{ $clave }}
+  value: {{ $valor }}
+{{ end -}}
+{{- end -}}
+{{- end -}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+{{- define "extra-env-vars-wordpress" -}}
+{{ include "extra-env-vars" . }}
+{{- end -}}

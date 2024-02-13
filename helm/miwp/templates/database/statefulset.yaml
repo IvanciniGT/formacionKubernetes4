@@ -36,22 +36,26 @@ spec:
                     # y va a ser explicito en él... mejor le dejo a kubernetes y me quito de follones
                     env:
                         -   name:           MARIADB_ROOT_PASSWORD
-                            value:          mariadb-service
+                            valueFrom:
+                                secretKeyRef:
+                                    name:   {{ default (include "nombre-secreto-bbdd" .) $.Values.database.config.existingSecretName }}
+                                    key:    rootPassword
                         -   name:           MARIADB_USER
                             valueFrom:
                                 secretKeyRef:
-                                    name:   datos-sensibles-mariadb
-                                    key:    usuario-bbdd
+                                    name:   {{ default (include "nombre-secreto-bbdd" .) $.Values.database.config.existingSecretName }}
+                                    key:    user
                         -   name:           MARIADB_PASSWORD
                             valueFrom:
                                 secretKeyRef:
-                                    name:   datos-sensibles-mariadb
-                                    key:    password-bbdd
+                                    name:   {{ default (include "nombre-secreto-bbdd" .) $.Values.database.config.existingSecretName }}
+                                    key:    password
                         -   name:           MARIADB_DATABASE
                             valueFrom:
                                 configMapKeyRef:
-                                    name:   datos-mariadb
+                                    name:   {{ include "nombre-configmap-bbdd" . }}
                                     key:    nombre-bbdd
+                        {{- include "extra-env-vars-database" $.Values.database | nindent 24 }}
                     volumeMounts:
                         -   name:           datos-persistentes-mariadb
                             mountPath:      /var/www/html

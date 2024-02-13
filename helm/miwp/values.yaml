@@ -21,7 +21,7 @@ wordpress:
         pullPolicy:         IfNotPresent
     extraLabels:           {}
     #extra-annotations:     {}
-    extra-env:              []
+    extraEnv:              []
     #extra-initContainers:  []
     #extra-containers:      []
     #affinities:            {}
@@ -38,7 +38,7 @@ wordpress:
         existingClaimName:  ~ # Si este se pone, te ignoro los de abajo
         capacity:           ~    
         storageClassName:   ~
-        
+
 database:
     config:
         name:               wordpress
@@ -55,7 +55,9 @@ database:
         repo:               mariadb
         tag:                11.2
         pullPolicy:         IfNotPresent # Always Never IfNotPresent
-
+    extraEnv:               #{}
+        #MARIADB_PASSWORD: OtroValor
+        estoSI:               valor
     resources:              {}
         #requests:
         #    cpu:    
