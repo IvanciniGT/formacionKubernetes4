@@ -23,7 +23,7 @@ wordpress:
     #extra-annotations:     {}
     extraEnv:              
         #WORDPRESS_DB_USER: RUINA
-        WORDPRESS_DB_HOST: miServicio
+        #WORDPRESS_DB_HOST: miServicio
         vaBien:            valor
     #extra-initContainers:  []
     #extra-containers:      []
@@ -61,15 +61,16 @@ database:
     extraEnv:               #{}
         #MARIADB_PASSWORD: OtroValor
         estoSI:               valor
-    resources:              {}
-        #requests:
-        #    cpu:    3       300m
-        #    memory: 23   Mi Gi Ki
-        #limits:
-        #    cpu:    
-        #    memory: 
+    resources:              #{}
+        requests:
+            cpu:    300m
+            memory: 23Mi
+        limits:
+            cpu:    4
+            memory: 44Mi
+        #lucas: jsjsj
+
     persistence:
-        enabled:            false
-        existingClaimName:  ~ # Si este se pone, te ignoro los de abajo
-        capacity:           ~    
-        storageClassName:   ~
+        enabled:            true
+        capacity:           6Gi
+        storageClassName:   rapidito-redundante

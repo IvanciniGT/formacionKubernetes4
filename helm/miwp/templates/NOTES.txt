@@ -1,0 +1,29 @@
+# Wordpress
+
+Enhorabuena, ya tienes el wordpress desplegado.
+
+## Base de datos
+
+Estamos usando un MariaDB para tu wordpress.
+{{- if not $.Values.database.config.password }}
+
+Te hemos generado un password aletorio para tu base de datos, puedes obtenerlo al ejecutar el comando:
+
+  $ kubectl get secret {{ include "nombre-secreto-bbdd" . }} -n {{ $.Release.Namespace }} -o jsonpath="{ .data.password }" | base64 --decode
+{{ end -}}
+{{- if not $.Values.database.config.rootPassword }}
+
+Te hemos generado un password aletorio para el usuario root de tu base de datos, puedes obtenerlo al ejecutar el comando:
+
+  $ kubectl get secret {{ include "nombre-secreto-bbdd" . }} -n {{ $.Release.Namespace }} -o jsonpath="{ .data.rootPassword }" | base64 --decode
+{{ end -}}
+
+Si quieres, puede entrar a la base de datos, mediante el comando:
+
+  $ export USUARIO=$(kubectl get secret {{ include "nombre-secreto-bbdd" . }} -n {{ $.Release.Namespace }} -o jsonpath="{ .data.user }" | base64 --decode)
+  $ export PASSWORD=$(kubectl get secret {{ include "nombre-secreto-bbdd" . }} -n {{ $.Release.Namespace }} -o jsonpath="{ .data.password }" | base64 --decode)
+  $ kubectl exec -it {{ include "nombre-statefulset-bbdd" . }}-0 -c mariadb -n {{ $.Release.Namespace }} -- mysql -u $USUARIO -p $PASSWORD {{ $.Values.database.config.name }}
+
+## Acceso
+
+Puedes comprobar que todo funciona correctamente accediendo a....

@@ -102,8 +102,22 @@ imagePullPolicy:        {{ .pullPolicy }}
 {{- end -}}
 
 
-{{- define "validate-resources" -}}
+{{- define "define-resources" -}}
+{{- if and . (gt (len .) 0) -}}
+    {{- $invalidKey := "Clave no válida: '%s'. Solo se permiten las claves 'requests' y 'limits' dentro del bloque resources." -}}
 
+    {{- range $clave, $valor := . -}}
+        {{- if or (eq $clave "requests") (eq $clave "limits")  -}}
+            {{- include "validate-cpu-memory" $valor -}}
+        {{- else -}}
+            {{- fail (printf $invalidKey $clave ) -}}
+        {{- end -}}
+    {{- end -}}
+
+resources:
+{{- . | toYaml | nindent 4 -}}
+
+{{- end -}}
 {{- end -}}
 
 
@@ -112,19 +126,19 @@ imagePullPolicy:        {{ .pullPolicy }}
 
     {{- $invalidCPUValue := printf "El valor suministrado para CPU no es válido: '%s'. Debe ser un número entero opcionalmente seguido de la letra 'm'" .cpu -}}
     {{- $invalidMemoryValue := printf "El valor suministrado para memory no es válido: '%s'. Debe ser un número entero seguido de la unidad 'Mi', 'Gi' o 'Ki'" .memory -}}
-    {{- $invalidResource := "Solo se permiten los recursos 'cpu' y 'memory'" -}}
+    {{- $invalidResource := "Clave no válida: '%s'. Solo se permiten los recursos 'cpu' y 'memory' dentro del bloque resources." -}}
 
     {{- range $clave, $valor := . -}}
         {{- if eq $clave "cpu" -}}
-            {{- if not (regexMatch "^[1-9][0-9]*m?$" $valor ) }}
+            {{- if not (regexMatch "^[1-9][0-9]*m?$" ($valor|toString) ) }}
                 {{ fail $invalidCPUValue }}
             {{ end -}}
         {{- else if eq $clave "memory" -}}
-            {{- if not (regexMatch "^[1-9][0-9]*[KMG]i$" $valor ) }}
+            {{- if not (regexMatch "^[1-9][0-9]*[KMG]i$" ($valor|toString) ) }}
                 {{ fail $invalidMemoryValue }}
             {{ end -}}
         {{- else -}}
-            {{- fail $invalidResource -}}
+            {{- fail (printf $invalidResource $clave ) -}}
         {{- end -}}
     {{- end -}}
 {{- end -}}

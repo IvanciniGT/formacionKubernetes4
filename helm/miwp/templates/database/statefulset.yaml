@@ -59,20 +59,22 @@ spec:
                     volumeMounts:
                         -   name:           datos-persistentes-mariadb
                             mountPath:      /var/www/html
-                    resources:
-                        requests:
-                            cpu:            500m
-                            memory:         1Gi
-                        limits:
-                            cpu:            2
-                            memory:         1Gi
+                    {{- include "define-resources" $.Values.database.resources | nindent 20 }}
+    {{- if not $.Values.database.persistence.enabled }}
+            volumes:
+                -   name:                   datos-persistentes-mariadb
+                    emptyDir:               {}
+    {{- else }}
     volumeClaimTemplates:
         -   metadata:
                 name:   datos-persistentes-mariadb
             spec:
                 resources:
                     requests: 
-                        storage: 5Gi
-                storageClassName: rapidito
+                        storage: {{ required "La clave 'capacity' es obligatoria en database.persistence cuando database.persistence.enabled es true." .Values.database.persistence.capacity }}
+                {{- if  .Values.database.persistence.storageClassName }}
+                storageClassName: {{ .Values.database.persistence.storageClassName }}
+                {{- end }}
                 accessModes:
                     - ReadWriteOnce
+    {{- end -}}
