@@ -27,13 +27,7 @@ spec:
         spec:
             containers:
                 -   name:                   mariadb
-                    image:                  {{ .Values.database.image.repo }}:{{ .Values.database.image.tag }}
-                    imagePullPolicy:        #{{ .Values.database.image.pullPolicy }}
-                        {{ if (regexMatch "^((IfNotPresent)|(Always)|(Never))$" .Values.database.image.pullPolicy ) }}
-                            {{ .Values.database.image.pullPolicy }}
-                        {{ else }}
-                            {{ fail (printf "El valor de imagePullPolicy suministrado no es válido: '%s'. Debe ser uno de: 'Always', 'Never' o 'IfNotPresent'" .Values.database.image.pullPolicy )}}
-                        {{ end }}
+                    {{- include "imagen" .Values.database | nindent 20 }}
                     # Si me pasan un valor que no sea Always, Never o IfNotPresent
                     # Kubernetes va a dar un error MUY EXPLICITO al aplicar el fichero de manifiest:
                     # No se puede crear el StatefulSet porque el valor de imagePullPolicy no es válido

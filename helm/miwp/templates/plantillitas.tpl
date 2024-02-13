@@ -44,3 +44,17 @@ app:     wp
 {{- $.extraLabels | toYaml }}
 {{- end -}}
 
+{{- define "imagen" }}
+{{- with .image -}}
+    {{- $invalidPullPolicy := printf "El valor de imagePullPolicy suministrado no es válido: '%s'. Debe ser uno de: 'Always', 'Never' o 'IfNotPresent'" .pullPolicy  -}}
+    {{- $requiredRepo := "El repositorio de la imagen es obligatorio" -}}
+    {{- $requiredTag := "El tag de la imagen es obligatorio" -}}
+
+    {{- if not (regexMatch "^((IfNotPresent)|(Always)|(Never))$" .pullPolicy ) }}
+        {{ fail $invalidPullPolicy }}
+    {{ end -}}
+
+image:                  {{ required $requiredRepo .repo }}:{{ required $requiredTag .tag }}
+imagePullPolicy:        {{ .pullPolicy }}
+{{- end -}}
+{{- end -}}
