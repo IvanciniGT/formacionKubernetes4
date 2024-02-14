@@ -1,0 +1,21 @@
+---
+apiVersion:         networking.k8s.io/v1
+kind:               Ingress
+
+metadata:
+    name:           wp-ingress  
+    namespace:      wp-ivan
+
+spec:
+    ingressClassName:   nginx # El ingress controller al que se le debe aplicar esta regla
+    rules:
+        - host: miweb.miempresa.com # Cuando alguien llame al nginx usando: http://miweb.miempresa.com/ => wp-service:8080
+          http:
+            paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                        name: wp-service
+                        port:
+                            number: 8080

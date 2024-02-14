@@ -1,15 +1,18 @@
----
-# Service: WP - ClusterIP | NodePort | LoadBalancer
-apiVersion:             v1
-kind:                   Service
+{{- if .Values.wordpress.service.enabled }}
+apiVersion: v1
+kind: Service
 metadata:
-    name:               wp-service # Este nombre... es el fqdn que se mete en el DNS
-
+  name: {{ template "nombre-servicio-wp" . }}
+  labels:
+    app: {{ template "nombre-deployment-wp" . }}
 spec:
-    type:               NodePort
-    ports:
-        - port:         80
-          targetPort:   80
-          nodePor:      38080
-    selector:
-        app:            wp
+  type: {{ .Values.wordpress.service.type }}
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+      {{ if .Values.wordpress.service.nodePort }}{{ .Values.wordpress.service.nodePort }}{{ end }}
+  selector:
+        {{- include "wp-labels" $ | nindent 8 }}
+{{- end }}

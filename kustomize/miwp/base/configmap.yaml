@@ -1,0 +1,10 @@
+---
+apiVersion:     v1
+kind:           ConfigMap
+
+metadata:
+    name:       datos-bbdd
+    namespace:  wp-ivan
+
+data:
+    nombre: miwp

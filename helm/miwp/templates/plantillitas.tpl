@@ -113,7 +113,6 @@ imagePullPolicy:        {{ .pullPolicy }}
             {{- fail (printf $invalidKey $clave ) -}}
         {{- end -}}
     {{- end -}}
-
 resources:
 {{- . | toYaml | nindent 4 -}}
 
@@ -156,3 +155,23 @@ resources:
                 ge Mayor o igual
             */ -}}
 
+
+{{- define "nombre-servicio-wp" -}}
+{{ include "release-prefijo" . }}wordpress-service
+{{- end -}}
+
+{{- define "nombre-deployment-wp" -}}
+{{ include "release-prefijo" . }}wordpress-deployment
+{{- end -}}
+
+{{- define "nombre-pvc-wp" -}}
+{{ include "release-prefijo" . }}wordpress-pvc
+{{- end -}}
+
+{{- define "nombre-hpa-wp" -}}
+{{ include "release-prefijo" . }}wordpress-hpa
+{{- end -}}
+
+{{- define "nombre-ingress-wp" -}}
+{{ include "release-prefijo" . }}wordpress-ingress
+{{- end -}}

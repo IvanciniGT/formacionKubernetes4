@@ -4,52 +4,50 @@ apiVersion:             apps/v1
 kind:                   Deployment
 
 metadata:
-    name:               wp
+    name:               {{ include "nombre-deployment-wp" . }}
+    namespace:          {{ $.Release.Namespace }}
 
 spec:
-    replicas:           1
+    replicas:           {{ .Values.wordpress.replicas.min }}
     selector:           
         matchLabels:
-            app:        wp
+            {{- include "wp-labels" $ | nindent 12 }}
     template:
         metadata:
             labels:
-               app:     wp
+                {{- include "wp-labels" $ | nindent 16 }}
         spec:
             containers:
                 -   name:                   wp
-                    image:                  wordpress:6.4 # con apache incorporado
-                    imagePullPolicy:        IfNotPresent
+                    {{- include "imagen" .Values.wordpress | nindent 20 }}
                     env:
                         -   name:           WORDPRESS_DB_HOST
                             value:          {{ include "nombre-servicio-bbdd" . }}
                         -   name:           WORDPRESS_DB_USER
                             valueFrom:
                                 secretKeyRef:
-                                    name:   datos-sensibles-wp
-                                    key:    usuario-bbdd
+                                    name:   {{ include "nombre-secreto-bbdd" . }}
+                                    key:    user
                         -   name:           WORDPRESS_DB_PASSWORD
                             valueFrom:
                                 secretKeyRef:
-                                    name:   datos-sensibles-wp
-                                    key:    password-bbdd
+                                    name:   {{ include "nombre-secreto-bbdd" . }}
+                                    key:    password
                         -   name:           WORDPRESS_DB_NAME
                             valueFrom:
                                 configMapKeyRef:
-                                    name:   datos-wp
+                                    name:   {{ include "nombre-configmap-bbdd" . }}
                                     key:    nombre-bbdd
                         {{- include "extra-env-vars-wordpress" $.Values.wordpress | nindent 24 }}
                     volumeMounts:
                         -   name:           datos-persistentes
                             mountPath:      /var/www/html
-                    resources:
-                        requests:
-                            cpu:            500m
-                            memory:         1Gi
-                        limits:
-                            cpu:            4
-                            memory:         1Gi
+                    {{- include "define-resources" $.Values.wordpress.resources | nindent 20 }}
             volumes:
                 -   name:                   datos-persistentes
+                {{- if not $.Values.wordpress.persistence.enabled }}
+                    emptyDir:               {}
+                {{- else }}
                     persistentVolumeClaim:
-                        claimName:          pvc-wp
+                        claimName:          {{ default (include "nombre-pvc-wp" .) .Values.wordpress.persistence.existingClaimName }}
+                {{- end }}

@@ -1,0 +1,6 @@
+---
+# Namespace para todo
+apiVersion:             v1
+kind:                   Namespace
+metadata:
+    name:               wp-ivan

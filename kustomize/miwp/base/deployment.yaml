@@ -1,0 +1,48 @@
+---
+# Deployment WP
+apiVersion:             apps/v1
+kind:                   Deployment
+metadata:
+    name:               wp
+    namespace:          wp-ivan
+spec:
+    replicas:           1
+    selector:
+        matchLabels:
+            app:        wp ### REFERENCIA A (1)
+    template:
+        metadata:
+            name:       wp-pod-template
+            labels:
+                app:    wp  # (1)
+        spec:
+            nodeSelector:
+                nodo: ivan
+            volumes:
+                - name: datos-persistentes
+                  persistentVolumeClaim:
+                    claimName: pvc-wp
+            containers:
+                - name:         wp
+                  image:        wordpress:6.4 # La ultima 6.4, con su apache ready to go!
+                  volumeMounts:
+                    - name:      datos-persistentes
+                      mountPath: /var/www/html
+                  env:
+                    - name:     WORDPRESS_DB_HOST
+                      value:    mariadb-service:3307
+                    - name:     WORDPRESS_DB_USER
+                      valueFrom:        
+                        secretKeyRef:
+                            name:   datos-secretos-bbdd
+                            key:    user
+                    - name:     WORDPRESS_DB_PASSWORD
+                      valueFrom:        
+                        secretKeyRef:
+                            name:   datos-secretos-bbdd
+                            key:    password
+                    - name:     WORDPRESS_DB_NAME
+                      valueFrom:        
+                        configMapKeyRef:
+                            name:   datos-bbdd
+                            key:    nombre

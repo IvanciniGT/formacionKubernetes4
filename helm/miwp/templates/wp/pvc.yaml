@@ -1,13 +1,15 @@
 ---
 # PVC WP
+{{- if .Values.wordpress.persistence.enabled }}
 apiVersion: v1
 kind:       PersistentVolumeClaim
 metadata:
-    name:   pvc-wp
+    name:   {{ include "nombre-pvc-wp" . }}
 spec:
     resources:
         requests: 
-            storage: 5Gi
-    storageClassName: rapidito
+            storage: {{ .Values.wordpress.persistence.capacity }}
+    storageClassName: {{ .Values.wordpress.persistence.storageClass }}
     accessModes:
         - ReadWriteOnce
+{{- end }}

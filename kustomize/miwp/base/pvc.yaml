@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind:       PersistentVolumeClaim
+metadata:
+    name:   pvc-wp
+    namespace: wp-ivan
+spec:
+    resources:
+        requests: 
+            storage: 1Gi
+    accessModes:
+        - ReadWriteOnce

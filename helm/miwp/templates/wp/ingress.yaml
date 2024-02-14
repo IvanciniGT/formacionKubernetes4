@@ -3,17 +3,16 @@
 apiVersion:             networking.k8s.io/v1
 kind:                   Ingress
 metadata:
-    name:               wp-ingress # Este nombre... es el fqdn que se mete en el DNS
-    annotations:
-        kubernetes.io/ingress.class: nginx
+    name:               {{ include "nombre-ingress" . }}
 spec:
+    ingressClassName:   {{ .Values.wordpress.ingress.className }}
     rules:
-        -   host: misuperweb.miempresa.com
+        -   host: {{ .Values.wordpress.ingress.host }}
             http:
                 paths:
                     - backend:
                         service:
-                            name: wp-service
+                            name: {{ template "nombre-servicio-wp" . }}
                             port:
                                 number: 80
                       path: /

@@ -1,22 +1,19 @@
 ---
+{{ if .Values.wordpress.replicas.scaling.enabled }}
 # HorizontalPodAutoescaler
 apiVersion:             autoscaling/v1
 kind:                   HorizontalPodAutoscaler # hpa
 metadata:
     name:               wp-hpa
 spec:
-    minReplicas:        2
-    maxReplicas:        5
+    minReplicas:        {{ .Values.wordpress.replicas.min }}
+    maxReplicas:        {{ .Values.wordpress.replicas.scaling.max }}
     
     scaleTargetRef:
         apiVersion:     apps/v1
         kind:           Deployment
-        name:           wp
+        name:           {{ template "nombre-deployment-wp" . }}
         
     metrics:
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
+      {{ .Values.wordpress.replicas.scaling.metrics }}
+{{ end }}
