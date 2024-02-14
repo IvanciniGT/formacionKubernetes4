@@ -1,0 +1,47 @@
+  669  git init
+  670  git add :/
+  671  git commit -m 'Alta'
+  672  git remote add elgithub https://github.com/IvanciniGT/kustomize-wp-base.git
+  673  git push -u elgithub master
+  674  git config --global credential.helper store
+  675  git push -u elgithub master
+  676  git init
+  677  git add :/
+  678  git status
+  679  git commit -m 'alta'
+  680  git remote add origin https://github.com/IvanciniGT/kustomize-wp-entorno1.git
+  681  git push
+  682  git push -u origin master
+  683  git submodule list
+  684  git submodule
+  685  cd base
+  686  ls
+  688  git remote get-url elgithub
+  689  cd ..
+  694  rm -rf base
+  695  git submodule add https://github.com/IvanciniGT/kustomize-wp-base.git base
+  696  ls
+  697  git status
+  700  git add :/
+  701  git commit -m 'sin base'
+  702  git submodule add https://github.com/IvanciniGT/kustomize-wp-base.git base
+  703  git add :/
+  704  git commit -m 'con base'
+  705  git push
+  706  cd base
+  707  git tag 1.0.0
+  708  git tag push
+  709  git  push --tags
+  710  cd ..
+  711  git add :/
+  712  git commit -m 'asignada version base'
+  713  git push
+  714  git submodule
+  715  git submodule ?
+  719  git submodule set-branch --branch 1.0.0 base
+  720  git add :/
+  721  git commit -m 'asignada version'
+  722  git push
+  723  cd ..
+  724  git clone --recurse-submodules https://github.com/IvanciniGT/kustomize-wp-entorno1 micarpeta
+  725  history

@@ -315,3 +315,69 @@ La sintaxis es 100% Kubernetes... y la forma de parametrizar es 100% Kubernetes.
 Vamos a poder eso si hacer uso de variables... pero no esperais nada como por ejemplo un bucle.
 
 Vamos a partir de una carpeta que llamaremos base... y en ella vamos a tener los ficheros de despliegue de cada objeto que constituye el despliegue de nuestra aplicación.... al menos un despliegue genérico.
+
+# Estructura de un despliegue con Kustomize:
+
+miwp <- Esta carpeta apunta a otro repo de git: https://github.com/miOtroUsuario/miDespliegueWP
+    ├── base -> Apuntaría aun repo de git https://github.com/miUsuario/despliegue-base-wp en una version
+    │   ├── database
+    │   │   ├── configmap.yaml
+    │   │   ├── kustomization.yaml
+    │   │   ├── secret.yaml
+    │   │   ├── service.yaml
+    │   │   └── statefulset.yaml
+    │   ├── kustomization.yaml
+    │   └── wp
+    │       ├── deployment.yaml
+    │       ├── ingress.yaml
+    │       ├── kustomization.yaml
+    │       ├── pvc.yaml
+    │       └── service.yaml
+    └── overlays
+        ├── desarrollo
+            └── kustomization.yaml
+
+miwp2 <- Esta carpeta apunta a otro repo de git: https://github.com/miOtroUsuario/miDespliegueWP
+    ├── base -> Apuntaría aun repo de git https://github.com/miUsuario/despliegue-base-wp en una version
+    └── overlays
+        └── produccion
+            ├── deployment-patch.yaml
+            ├── kustomization.yaml
+            └── pvc-patch.yaml
+
+> Cómo me llevo eso a GIT?
+
+Habéis trabajado con sub-módulos de git?
+
+
+---
+
+#VERSIONADO!
+
+- En el caso de Kustomize, quien lleva en control de la VERSION:
+    - Del base
+    - De los parches
+    Con tags de GIT... Es el único sitio que hay!
+
+Y DEJO GIT COMO única fuente de la verdad!
+
+- En cambio... qué pasa en HELM?
+  La version del Chart la defino en el archivo chart.yaml...
+  Pero en git puedo llevar un versionado alternativo...
+  De hecho lo habitual es que ponga tags en GIT... pero pase del archivo chart.yaml
+
+  Es más, quiero estar modificando / manteniendo sincronizados a manita el archivo chart.yaml con el tag de git? Al final no se hace.... por vaguería
+
+  maven
+    pom.xml <<<< version del artifact
+    Y la mantenéis sincronizada con el tag de git? NI DE COÑA!
+
+GITOPS lo habitual es dejar a GIT como única fuente de verdad.
+No debería ser la herramienta de devops la que se encargue de eso...
+GIT DEBERIA ENCARGARSE DE ESO!!!
+Y para eso existen los git hooks!
+Y en la rama desarrollo, yo voy poniendo tags del tipo v1.2.3-dev
+Y git me debe asegurar que mis tags son de ese tipo: GIT !!!! no el server CI/CD
+Y al subir un commit a release, git debe etiquetar ese commit como: v1.2.3-RC1 o v1.2.3-rc2
+Y al subir ese commit a master, git debe etiquetar ese commit como: v1.2.3
+Y en paralelo con eso, git debe ir modificando el archivo chart.yaml a través de un git hook... que me modifique el archivo chart.yaml con la versión que le corresponde a ese commit.
